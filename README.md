@@ -26,6 +26,7 @@ KeybindLib is released under the [Apache License, Version 2.0].
 ### Referencing library
 - <b>Visual Studio:</b> right-click on `Dependencies` in your project, click on `Add Project Reference...`, then `Browse...`, select the dll, and click `OK`. The XML will be detected automatically if it's in the same location as the dll.
 - <b>JetBrains Rider:</b> right-click on `Dependencies` in your project, click on `Reference`, then `Add From...`, select the dll, and click `Add`. The XML will be detected automatically if it's in the same location as the dll.
+
 It is highly recommended that you also download [KeybindLib.xml](https://github.com/SpiralShapeDev/KeybindLib/blob/master/KeybindLib.xml) with the `KeybindLib.dll` and put them in the same directory. This will let you reference KeybindLib and view its documentation in your IDE with more in-depth information on how to use functions.
 
 ### Registering and listening to an Event
