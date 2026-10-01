@@ -34,7 +34,7 @@ This is example will show you how to create a keybind listener.
 - In this case, the mod's ID is `"TestDeveloper.TestMod"` and the key's ID is `"test_key"`.
 - It has the displayName value of `"Test Keybind"` which is displayed in the Custom Mod Keybinds input page.
 - It has the defaultKey value of `KeyCode.F`, which will, if an existing key assignment for that id (`"test_key"` in this case) isn't found, will be set to this default value.
-- It has the keyEnvironment value of `KeybindManager.KeyEnvironment.Any` so, the can keybind will be active ingame, on the title screen, etc.
+- It has the keyEnvironment value of `KeybindManager.KeyEnvironment.Any` so, the keybind will be active ingame, on the title screen, etc.
 - It has the keyPressType value of `KeybindManager.KeyPressType.OnKeyDown` so, keybind will only run once instantly on key press.
 
 ```
