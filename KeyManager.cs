@@ -260,6 +260,7 @@ namespace KeybindLib
 
         private static string GetFileHash(string filePath)
         {
+            if (!File.Exists(filePath)) return null;
             using (var sha256 = SHA256.Create())
             {
                 using (var fileStream = File.OpenRead(filePath))
@@ -285,6 +286,7 @@ namespace KeybindLib
             string keybindConfigPath = Path.Combine(keybindConfigDirPath, $"{modId}.cfg");
             Directory.CreateDirectory(keybindConfigDirPath);
             string fileHash = GetFileHash(keybindConfigPath);
+            if (fileHash == null) return KeyCode.None;
 
             if (!EventHandler.KeyBindings.ContainsKey((modId,keyId)) || !File.Exists(keybindConfigPath)) return KeyCode.None;
             if (!getDict.ContainsKey(modId) || fileHash != getDict[modId].Item1)

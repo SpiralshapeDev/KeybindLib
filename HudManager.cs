@@ -132,11 +132,45 @@ namespace KeybindLib
             modConfigPageContentBoxLayout.spacing = 20;
             modConfigPageContentBoxLayout.padding = new RectOffset(10, 10, 10, 10);
 
+            // Fix raycasting
+            Image modConfigPageContentBoxImage = modConfigPageContentBox.AddComponent<Image>();
+            modConfigPageContentBoxImage.color = Color.clear;
+            modConfigPageContentBoxImage.raycastTarget = true;
+
+            GameObject modConfigPageScrollbarBox = new GameObject("Scrollbar");
+            RectTransform modConfigPageScrollbarBoxRect = modConfigPageScrollbarBox.AddComponent<RectTransform>();
+            modConfigPageScrollbarBoxRect.SetParent(modKeybindsPage.transform, false);
+            modConfigPageScrollbarBoxRect.anchorMin = new Vector2(1, 0);
+            modConfigPageScrollbarBoxRect.anchorMax = new Vector2(1, 1);
+            modConfigPageScrollbarBoxRect.pivot = new Vector2(1, 0.5f);
+            modConfigPageScrollbarBoxRect.sizeDelta = new Vector2(8, 0);
+            modConfigPageScrollbarBoxRect.anchoredPosition = new Vector2(-10, 0);
+            modConfigPageScrollbarBoxRect.localPosition += new Vector3(25,0,0);
+
+            Image modConfigPageScrollbarBackground = modConfigPageScrollbarBox.AddComponent<Image>();
+            modConfigPageScrollbarBackground.color = new Color(0.2f, 0.2f, 0.2f, 0.5f);
+
+            GameObject modConfigPageScrollbarHandleBox = new GameObject("Handle");
+            RectTransform modConfigPageScrollbarHandleRect = modConfigPageScrollbarHandleBox.AddComponent<RectTransform>();
+            modConfigPageScrollbarHandleRect.SetParent(modConfigPageScrollbarBoxRect, false);
+            modConfigPageScrollbarHandleRect.anchorMin = Vector2.zero;
+            modConfigPageScrollbarHandleRect.anchorMax = new Vector2(1, 1);
+            modConfigPageScrollbarHandleRect.offsetMin = Vector2.zero;
+            modConfigPageScrollbarHandleRect.offsetMax = Vector2.zero;
+
+            Image modConfigPageScrollbarHandleBackground = modConfigPageScrollbarHandleBox.AddComponent<Image>();
+            modConfigPageScrollbarHandleBackground.color = new Color(0.5f, 0.5f, 0.5f, 0.8f);
+
+            Scrollbar modConfigPageScrollbar = modConfigPageScrollbarBox.AddComponent<Scrollbar>();
+            modConfigPageScrollbar.handleRect = modConfigPageScrollbarHandleRect;
+            modConfigPageScrollbar.direction = Scrollbar.Direction.BottomToTop;
+
             ScrollRect modConfigPageScrollRect = modKeybindsPage.AddComponent<ScrollRect>();
             modConfigPageScrollRect.viewport = modConfigPageViewport.GetComponent<RectTransform>();
             modConfigPageScrollRect.content = modConfigPageContentBox.GetComponent<RectTransform>();
             modConfigPageScrollRect.vertical = true;
             modConfigPageScrollRect.horizontal = false;
+            modConfigPageScrollRect.verticalScrollbar = modConfigPageScrollbar;
             modConfigPageScrollRect.scrollSensitivity = 20f;
             modConfigPageScrollRect.elasticity = 0;
 
@@ -169,14 +203,16 @@ namespace KeybindLib
                 noKeybindHeader.transform.SetParent(modConfigPageContentBox.transform, false);
                 return;
             }
-            modConfigPageViewportRect.localPosition += new Vector3(0,50,0);
 
             int totalHeight = activeKeys.Keys.Count * 120;
             foreach (var activeKey in activeKeys)
             {
-                totalHeight += activeKey.Value.Count * 60;
+                totalHeight += activeKey.Value.Count * 25;
             }
             modConfigPageContentBoxRect.sizeDelta = new Vector2(1000, totalHeight + 200);
+
+            LayoutElement modConfigPageContentBoxLayoutElement = modConfigPageContentBox.AddComponent<LayoutElement>();
+            modConfigPageContentBoxLayoutElement.preferredHeight = totalHeight + 200;
 
             foreach (string modId in activeKeys.Keys)
             {
@@ -209,32 +245,40 @@ namespace KeybindLib
                     RectTransform keybindContentBoxRect = keybindContentBox.GetComponent<RectTransform>() ?? keybindContentBox.AddComponent<RectTransform>();
                     keybindContentBoxRect.sizeDelta = modKeybindBoxGrid.cellSize;
 
-                    HorizontalLayoutGroup keybindContentBoxHLG = keybindContentBox.AddComponent<HorizontalLayoutGroup>();
-                    keybindContentBoxHLG.spacing = 50f;
-                    keybindContentBoxHLG.childForceExpandWidth = false;
-                    keybindContentBoxHLG.childForceExpandHeight = false;
-                    keybindContentBoxHLG.padding = new RectOffset(0, 20, 0, 0);
-
                     GameObject keybindContentNameBox = new GameObject($"NameText");
                     TextMeshProUGUI keybindBoxContentNameText = keybindContentNameBox.AddComponent<TextMeshProUGUI>();
                     keybindBoxContentNameText.text = KeybindManager.GetDisplayName(modId, keybindId);
-                    keybindBoxContentNameText.fontSize = 30f;
+                    keybindBoxContentNameText.fontSize = 28f;
                     keybindBoxContentNameText.fontMaterial = standardKeybindContentTextMaterial;
                     RectTransform keyIdRect = keybindContentNameBox.GetComponent<RectTransform>() ?? keybindContentNameBox.AddComponent<RectTransform>();
                     keyIdRect.sizeDelta = new Vector2(200, 50);
                     keybindContentNameBox.transform.SetParent(keybindContentBox.transform, false);
+
+                    HorizontalLayoutGroup keybindContentBoxHLG = keybindContentBox.AddComponent<HorizontalLayoutGroup>();
+                    keybindContentBoxHLG.spacing = 50f;
+                    keybindContentBoxHLG.childForceExpandWidth = true;
+                    keybindContentBoxHLG.childForceExpandHeight = false;
+                    keybindContentBoxHLG.padding = new RectOffset(0, 20, 0, 0);
+
+                    LayoutElement keybindContentNameBoxLayout = keybindContentNameBox.AddComponent<LayoutElement>();
+                    keybindContentNameBoxLayout.flexibleWidth = 0;
+
+                    GameObject spacer = new GameObject("Spacer");
+                    spacer.transform.SetParent(keybindContentBox.transform, false);
+                    LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
+                    spacerLayout.preferredWidth = -1;
 
                     GameObject keybindContentButtonBox = new GameObject($"Button");
                     keybindContentButtonBox.transform.SetParent(keybindContentBox.transform, false);
 
                     Button keybindContentButton = keybindContentButtonBox.AddComponent<Button>();
                     RectTransform keybindContentButtonRect = keybindContentButtonBox.GetComponent<RectTransform>() ?? keybindContentButtonBox.AddComponent<RectTransform>();
-                    keybindContentButtonRect.sizeDelta = new Vector2(150, 50);
+                    keybindContentButtonRect.sizeDelta = new Vector2(125, 50);
                     modKeybindsPageKeyButtons[(modId,keybindId)] = keybindContentButton;
 
                     LayoutElement keybindContentButtonBoxLayout = keybindContentButtonBox.AddComponent<LayoutElement>();
-                    keybindContentButtonBoxLayout.preferredWidth = 150;
-                    keybindContentButtonBoxLayout.preferredHeight = 50;
+                    keybindContentButtonBoxLayout.preferredWidth = keybindContentButtonRect.sizeDelta.x;
+                    keybindContentButtonBoxLayout.preferredHeight = keybindContentButtonRect.sizeDelta.y;
                     keybindContentButtonBox.transform.localPosition += new Vector3(0,10,0);
 
                     Image keybindContentButtonImage = Object.Instantiate(standardKeybindContentButtonImage, keybindContentButtonBox.transform, false);
