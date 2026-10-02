@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using HarmonyLib;
 using Rewired;
 using Thor;
@@ -42,10 +43,16 @@ namespace KeybindLib
             if (modKeybindsButton == null)
             {
                 modKeybindsButton = Object.Instantiate<UIButton>(defaultsButton, defaultsButton.transform.parent, true);
-                Transform transform = modKeybindsButton.transform;
-                Vector3 offset = new Vector3(-200, 0, 0);
-                transform.localPosition += offset;
-                transform.gameObject.name = "ModKeybindsButton";
+
+                // Account for other mods adding buttons
+                Vector3 buttonOffset = new Vector3(-200, 0, 0);
+                modKeybindsButton.transform.localPosition -= buttonOffset;
+                int buttonCount = optionsPopup.Find("Input").transform
+                    .Cast<Transform>()
+                    .Count(child => child.name.Contains("Button"));
+                modKeybindsButton.transform.localPosition += buttonOffset * (buttonCount - 1);
+
+                modKeybindsButton.transform.gameObject.name = "ModKeybindsButton";
                 Object.Destroy(modKeybindsButton.GetComponent<EventTrigger>());
 
                 EventTrigger configButtonTrigger = modKeybindsButton.gameObject.AddComponent<EventTrigger>();
@@ -56,7 +63,6 @@ namespace KeybindLib
                     defaultsButtonOriginalTrigger.enabled = !defaultsButtonOriginalTrigger.enabled;
                     ToggleConfigUI();
                 });
-
                 configButtonTrigger.triggers.Add(configButtonEntry);
 
                 EventTrigger defaultButtonTrigger = defaultsButton.gameObject.AddComponent<EventTrigger>();
@@ -69,12 +75,7 @@ namespace KeybindLib
                     if (modKeybindsPage == null) return;
                     textContainer.SetActive(!modKeybindsPage.activeSelf);
 
-                    foreach (var (modId, keyId) in modKeybindsPageKeyButtons.Keys)
-                    {
-                        Button button = modKeybindsPageKeyButtons[(modId, keyId)];
-                        KeybindManager.SetKey(modId, keyId, KeybindManager.GetDefaultKey(modId, keyId));
-                        button.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = KeybindManager.GetKey(modId, keyId).ToString();
-                    }
+                    UpdateButtons();
                 });
 
                 defaultButtonTrigger.triggers.Add(defaultButtonEntry);
@@ -101,6 +102,7 @@ namespace KeybindLib
             if (modKeybindsPage != null)
             {
                 modKeybindsPage.SetActive(!modKeybindsPage.activeSelf);
+                if (modKeybindsPage.activeSelf) UpdateButtons();
                 return;
             }
             modKeybindsPage = new GameObject("ModKeybindsPage")
@@ -117,7 +119,6 @@ namespace KeybindLib
             GameObject modConfigPageViewport = new GameObject("Viewport");
             RectTransform modConfigPageViewportRect = modConfigPageViewport.GetComponent<RectTransform>() ?? modConfigPageViewport.AddComponent<RectTransform>();
             modConfigPageViewportRect.sizeDelta = modConfigPageRect.sizeDelta;
-            modConfigPageViewportRect.localPosition += new Vector3(0,50,0);
             modConfigPageViewport.transform.SetParent(modKeybindsPage.transform, false);
 
             GameObject modConfigPageContentBox = new GameObject("Content");
@@ -168,6 +169,7 @@ namespace KeybindLib
                 noKeybindHeader.transform.SetParent(modConfigPageContentBox.transform, false);
                 return;
             }
+            modConfigPageViewportRect.localPosition += new Vector3(0,50,0);
 
             int totalHeight = activeKeys.Keys.Count * 120;
             foreach (var activeKey in activeKeys)
@@ -302,6 +304,16 @@ namespace KeybindLib
                     yield break;
                 }
                 yield return null;
+            }
+        }
+
+        private static void UpdateButtons()
+        {
+            if (!modKeybindsButton) return;
+            foreach (var (modId, keyId) in modKeybindsPageKeyButtons.Keys)
+            {
+                Button button = modKeybindsPageKeyButtons[(modId, keyId)];
+                button.transform.Find("Text").GetComponent<TextMeshProUGUI>().text = KeybindManager.GetKey(modId, keyId).ToString();
             }
         }
     }

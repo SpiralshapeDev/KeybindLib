@@ -5,6 +5,8 @@ using Thor;
 using UnityEngine.Events;
 using System.Collections.Generic;
 using System.IO;
+using System.Security.Cryptography;
+using System.Text;
 using BepInEx;
 using Rewired;
 
@@ -137,7 +139,7 @@ namespace KeybindLib
     internal static class EventHandler
     {
         // { (modID, keyId): (UnityEvent, displayName, environmentRequirement, keyPressTypeRequirement) }
-        private static readonly Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)> KeyBindings = new Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)>();
+        internal static readonly Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)> KeyBindings = new Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)>();
         internal static readonly Dictionary<(string, string), KeyCode> defaultKeyCodes = new Dictionary<(string, string), KeyCode>();
 
         [HarmonyPatch(typeof(Game))]
@@ -253,6 +255,26 @@ namespace KeybindLib
     internal static class ConfigHandler
     {
         private static readonly string keybindConfigDirPath = Path.Combine(Paths.ConfigPath, "KeybindLib");
+        // {modID: (modConfigHash, {keyID:keyCode}) }
+        private static readonly Dictionary<string, (string,Dictionary<string, KeyCode>)> getDict = new Dictionary<string, (string,Dictionary<string, KeyCode>)>();
+
+        private static string GetFileHash(string filePath)
+        {
+            using (var sha256 = SHA256.Create())
+            {
+                using (var fileStream = File.OpenRead(filePath))
+                {
+                    byte[] hashBytes = sha256.ComputeHash(fileStream);
+                    StringBuilder sb = new StringBuilder();
+                    foreach (byte b in hashBytes)
+                    {
+                        sb.Append(b.ToString("x2"));
+                    }
+                    return sb.ToString();
+                }
+            }
+        }
+
         public static bool Has(string modId, string keyId)
         {
             return KeyCode.None != Get(modId, keyId);
@@ -261,13 +283,24 @@ namespace KeybindLib
         public static KeyCode Get(string modId, string keyId)
         {
             string keybindConfigPath = Path.Combine(keybindConfigDirPath, $"{modId}.cfg");
-
             Directory.CreateDirectory(keybindConfigDirPath);
+            string fileHash = GetFileHash(keybindConfigPath);
 
-            if (!File.Exists(keybindConfigPath))
+            if (!EventHandler.KeyBindings.ContainsKey((modId,keyId)) || !File.Exists(keybindConfigPath)) return KeyCode.None;
+            if (!getDict.ContainsKey(modId) || fileHash != getDict[modId].Item1)
             {
-                return KeyCode.None;
+                BuildModGetDict(modId);
             }
+            if (!getDict.TryGetValue(modId, out var fetchedKeyDict)) return KeyCode.None;
+
+            return fetchedKeyDict.Item2.TryGetValue(keyId, out var keyCode) ? keyCode : KeyCode.None;
+        }
+
+        private static void BuildModGetDict(string modId)
+        {
+            string keybindConfigPath = Path.Combine(keybindConfigDirPath, $"{modId}.cfg");
+            string fileHash = GetFileHash(keybindConfigPath);
+            getDict[modId] = getDict.TryGetValue(modId, out var foundTuple) ? (fileHash,foundTuple.Item2) : (fileHash, new Dictionary<string, KeyCode>());
 
             string[] lines = File.ReadAllLines(keybindConfigPath);
 
@@ -281,13 +314,13 @@ namespace KeybindLib
                 string lineKey = parts[0].Trim();
                 string lineValue = parts[1].Trim();
 
-                if (lineKey != keyId) continue;
+                if (!EventHandler.KeyBindings.ContainsKey((modId,lineKey))) continue;
+                if (!Enum.TryParse<KeyCode>(lineValue, out var keyCode)) continue;
+                KeyCode previousKeyCode = getDict[modId].Item2.TryGetValue(lineKey, out var fetchedKeyCode) ? fetchedKeyCode : KeyCode.None;
+                if (keyCode == previousKeyCode) continue;
 
-                if (!Enum.TryParse<KeyCode>(lineValue, out var keyCode1)) continue;
-                return keyCode1;
+                getDict[modId].Item2[lineKey] = keyCode;
             }
-
-            return KeyCode.None;
         }
 
         public static void Set(string modId, string keyId, KeyCode KeyCode)
