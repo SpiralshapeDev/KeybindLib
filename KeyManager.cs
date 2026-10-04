@@ -28,6 +28,8 @@ namespace KeybindLib
             public KeyPressType KeyPressType { get; set; }
             /// <summary>Human-readable name shown in keybind configuration menu.</summary>
             public string DisplayName { get; set; }
+            /// <summary>(optional, default: "Unknown Category") Human-readable category name shown in keybind configuration menu.</summary>
+            public string DisplayCategory { get; set; }
             /// <summary>A UnityEvent that runs when keybind conditions are met.</summary>
             public UnityEvent UnityEvent { get; set; }
 
@@ -35,13 +37,15 @@ namespace KeybindLib
             /// <param name="keyEnvironment">The game environment where the keybind is active.</param>
             /// <param name="keyPressType">When the keybind event should trigger.</param>
             /// <param name="displayName">Human-readable name shown in keybind configuration menu.</param>
+            /// <param name="displayCategory">Human-readable category name shown in keybind configuration menu.</param>
             /// <returns>An object containing all unique data associated to the keybind.</returns>
-            public KeyDetails(KeyCode defaultKey, KeyEnvironment keyEnvironment, KeyPressType keyPressType, string displayName)
+            public KeyDetails(KeyCode defaultKey, KeyEnvironment keyEnvironment, KeyPressType keyPressType, string displayName, string displayCategory = "Unknown Category")
             {
                 DefaultKey = defaultKey;
                 KeyEnvironment = keyEnvironment;
                 KeyPressType = keyPressType;
                 DisplayName = displayName;
+                DisplayCategory = displayCategory;
             }
         }
 
@@ -75,7 +79,8 @@ namespace KeybindLib
         ///     KeyCode.F,
         ///     KeybindManager.KeyEnvironment.Any,
         ///     KeybindManager.KeyPressType.OnKeyDown,
-        ///     "Test Keybind"
+        ///     "Test Keybind",
+        ///     "Test Category"
         /// );
         /// KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", testKeydetails).AddListener(() =>
         /// {

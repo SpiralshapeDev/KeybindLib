@@ -128,8 +128,8 @@ namespace KeybindLib
 
             VerticalLayoutGroup modConfigPageContentBoxLayout = modConfigPageContentBox.AddComponent<VerticalLayoutGroup>();
             modConfigPageContentBoxLayout.childForceExpandWidth = true;
-            modConfigPageContentBoxLayout.childForceExpandHeight = false;
-            modConfigPageContentBoxLayout.spacing = 20;
+            modConfigPageContentBoxLayout.childForceExpandHeight = true;
+            modConfigPageContentBoxLayout.spacing = 25;
             modConfigPageContentBoxLayout.padding = new RectOffset(10, 10, 10, 10);
 
             // Fix raycasting
@@ -204,10 +204,10 @@ namespace KeybindLib
                 return;
             }
 
-            int totalHeight = activeKeys.Keys.Count * 120;
+            float totalHeight = activeKeys.Keys.Count * 120;
             foreach (var activeKey in activeKeys)
             {
-                totalHeight += activeKey.Value.Count * 25;
+                totalHeight += activeKey.Value.Count * (10 + modConfigPageContentBoxLayout.spacing);
             }
             modConfigPageContentBoxRect.sizeDelta = new Vector2(1000, totalHeight + 200);
 
@@ -216,116 +216,159 @@ namespace KeybindLib
 
             foreach (string modId in activeKeys.Keys)
             {
-                GameObject modTitleHeader = new GameObject($"Title-Header {modId}");
+                GameObject modBox = new GameObject($"{modId}");
+                modBox.transform.SetParent(modConfigPageContentBox.transform, false);
+                VerticalLayoutGroup modBoxVLG = modBox.AddComponent<VerticalLayoutGroup>();
+
+                GameObject modTitleHeader = new GameObject($"Title-Header");
                 TextMeshProUGUI modTitleHeaderText = modTitleHeader.AddComponent<TextMeshProUGUI>();
                 modTitleHeaderText.text = $"# {modId}";
                 modTitleHeaderText.fontSize = 40f;
                 modTitleHeaderText.fontMaterial = standardKeybindContentTextMaterial;
                 RectTransform modTitleHeaderRect = modTitleHeader.GetComponent<RectTransform>() ?? modTitleHeader.AddComponent<RectTransform>();
                 modTitleHeaderRect.sizeDelta = new Vector2(modConfigPageRect.sizeDelta.x/2, 50);
-                modTitleHeader.transform.SetParent(modConfigPageContentBox.transform, false);
+                modTitleHeader.transform.SetParent(modBox.transform, false);
 
-                List<string> modKeybinds = activeKeys[modId];
-
-                GameObject modKeybindBox = new GameObject($"Content {modId}");
-                modKeybindBox.transform.SetParent(modConfigPageContentBox.transform, false);
-                RectTransform modKeybindBoxRect = modKeybindBox.GetComponent<RectTransform>() ?? modKeybindBox.AddComponent<RectTransform>();
-                modKeybindBoxRect.sizeDelta = new Vector2(1000, 60 * modKeybinds.Count + 70);
-
-                GridLayoutGroup modKeybindBoxGrid = modKeybindBox.AddComponent<GridLayoutGroup>();
-                modKeybindBoxGrid.constraintCount = 2;
-                modKeybindBoxGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-                modKeybindBoxGrid.cellSize = new Vector2(modConfigPageRect.sizeDelta.x/2, 50);
-                modKeybindBoxGrid.spacing = new Vector2(10, 10);
-
-                foreach (var keybindId in modKeybinds)
+                List<string> modKeybindsList = activeKeys[modId];
+                Dictionary<string, List<string>> modKeybindsDict = new Dictionary<string, List<string>>();
+                foreach (string keybindId in modKeybindsList)
                 {
-                    GameObject keybindContentBox = new GameObject($"KeybindContent {modId}");
-                    keybindContentBox.transform.SetParent(modKeybindBox.transform, false);
-                    RectTransform keybindContentBoxRect = keybindContentBox.GetComponent<RectTransform>() ?? keybindContentBox.AddComponent<RectTransform>();
-                    keybindContentBoxRect.sizeDelta = modKeybindBoxGrid.cellSize;
+                    KeybindManager.KeyDetails keyDetails = KeybindManager.GetKeyData(modId, keybindId);
+                    if (!modKeybindsDict.ContainsKey(keyDetails.DisplayCategory)) modKeybindsDict[keyDetails.DisplayCategory] = new List<string>();
+                    modKeybindsDict[keyDetails.DisplayCategory].Add(keybindId);
+                }
 
-                    GameObject keybindContentNameBox = new GameObject($"NameText");
-                    TextMeshProUGUI keybindBoxContentNameText = keybindContentNameBox.AddComponent<TextMeshProUGUI>();
-                    keybindBoxContentNameText.text = KeybindManager.GetKeyData(modId, keybindId).DisplayName;
-                    keybindBoxContentNameText.fontSize = 28f;
-                    keybindBoxContentNameText.fontMaterial = standardKeybindContentTextMaterial;
-                    RectTransform keyIdRect = keybindContentNameBox.GetComponent<RectTransform>() ?? keybindContentNameBox.AddComponent<RectTransform>();
-                    keyIdRect.sizeDelta = new Vector2(200, 50);
-                    keybindContentNameBox.transform.SetParent(keybindContentBox.transform, false);
+                GameObject modKeybindBox = new GameObject($"Content");
+                modKeybindBox.transform.SetParent(modBox.transform, false);
+                RectTransform modKeybindBoxRect = modKeybindBox.GetComponent<RectTransform>() ?? modKeybindBox.AddComponent<RectTransform>();
+                modKeybindBoxRect.sizeDelta = new Vector2(1000, 60 * modKeybindsList.Count + 70);
 
-                    HorizontalLayoutGroup keybindContentBoxHLG = keybindContentBox.AddComponent<HorizontalLayoutGroup>();
-                    keybindContentBoxHLG.spacing = 50f;
-                    keybindContentBoxHLG.childForceExpandWidth = true;
-                    keybindContentBoxHLG.childForceExpandHeight = false;
-                    keybindContentBoxHLG.padding = new RectOffset(0, 20, 0, 0);
+                VerticalLayoutGroup modKeybindBoxVLG = modKeybindBox.AddComponent<VerticalLayoutGroup>();
+                modKeybindBoxVLG.spacing = 10f;
+                modKeybindBoxVLG.childForceExpandWidth = true;
+                modKeybindBoxVLG.childForceExpandHeight = true;
+                modKeybindBoxVLG.padding = new RectOffset(0, 20, 0, 0);
 
-                    LayoutElement keybindContentNameBoxLayout = keybindContentNameBox.AddComponent<LayoutElement>();
-                    keybindContentNameBoxLayout.flexibleWidth = 0;
+                foreach (var categoryId in modKeybindsDict.Keys)
+                {
+                    GameObject categoryBox = new GameObject($"{categoryId}");
+                    RectTransform categoryBoxRect = modKeybindBox.GetComponent<RectTransform>() ?? modKeybindBox.AddComponent<RectTransform>();
+                    categoryBoxRect.sizeDelta = modKeybindBoxRect.sizeDelta;
+                    categoryBox.transform.SetParent(modKeybindBox.transform, false);
+                    VerticalLayoutGroup categoryVLG = categoryBox.AddComponent<VerticalLayoutGroup>();
 
-                    GameObject spacer = new GameObject("Spacer");
-                    spacer.transform.SetParent(keybindContentBox.transform, false);
-                    LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
-                    spacerLayout.preferredWidth = -1;
-
-                    GameObject keybindContentButtonBox = new GameObject($"Button");
-                    keybindContentButtonBox.transform.SetParent(keybindContentBox.transform, false);
-
-                    Button keybindContentButton = keybindContentButtonBox.AddComponent<Button>();
-                    RectTransform keybindContentButtonRect = keybindContentButtonBox.GetComponent<RectTransform>() ?? keybindContentButtonBox.AddComponent<RectTransform>();
-                    keybindContentButtonRect.sizeDelta = new Vector2(125, 50);
-                    modKeybindsPageKeyButtons[(modId,keybindId)] = keybindContentButton;
-
-                    LayoutElement keybindContentButtonBoxLayout = keybindContentButtonBox.AddComponent<LayoutElement>();
-                    keybindContentButtonBoxLayout.preferredWidth = keybindContentButtonRect.sizeDelta.x;
-                    keybindContentButtonBoxLayout.preferredHeight = keybindContentButtonRect.sizeDelta.y;
-                    keybindContentButtonBox.transform.localPosition += new Vector3(0,10,0);
-
-                    Image keybindContentButtonImage = Object.Instantiate(standardKeybindContentButtonImage, keybindContentButtonBox.transform, false);
-                    keybindContentButtonImage.name = "Background";
-                    RectTransform keybindContentButtonImageRect = keybindContentButtonImage.GetComponent<RectTransform>();
-                    keybindContentButtonImageRect.anchorMin = Vector2.zero;
-                    keybindContentButtonImageRect.anchorMax = Vector2.one;
-                    keybindContentButtonImageRect.offsetMin = Vector2.zero;
-                    keybindContentButtonImageRect.offsetMax = Vector2.zero;
-                    keybindContentButtonImage.raycastTarget = true;
-                    keybindContentButtonImage.transform.SetAsFirstSibling();
-
-                    GameObject keybindContentButtonTextBox = new GameObject("Text");
-                    keybindContentButtonTextBox.transform.SetParent(keybindContentButtonBox.transform, false);
-                    keybindContentButtonTextBox.transform.SetAsLastSibling();
-
-                    RectTransform keybindContentButtonTextRect = keybindContentButtonTextBox.AddComponent<RectTransform>();
-                    keybindContentButtonTextRect.anchorMin = Vector2.zero;
-                    keybindContentButtonTextRect.anchorMax = Vector2.one;
-                    keybindContentButtonTextRect.offsetMin = Vector2.zero;
-                    keybindContentButtonTextRect.offsetMax = Vector2.zero;
-
-                    TextMeshProUGUI keybindContentButtonText = keybindContentButtonTextBox.AddComponent<TextMeshProUGUI>();
-                    keybindContentButtonText.text = KeybindManager.GetKey(modId, keybindId).ToString();
-                    keybindContentButtonText.alignment = TextAlignmentOptions.Center;
-                    keybindContentButtonText.fontMaterial = standardKeybindContentTextMaterial;
-                    keybindContentButtonText.color = Color.white;
-                    keybindContentButtonText.raycastTarget = false;
-                    keybindContentButtonText.fontSize = 24f;
-
-                    keybindContentButton.targetGraphic = keybindContentButtonImage;
-
-                    string capturedModId = modId;
-                    string capturedKeybindId = keybindId;
-                    keybindContentButton.onClick.AddListener(() =>
+                    if (!(modKeybindsDict.Keys.Count == 1 && categoryId == "Unknown Category"))
                     {
-                        float fontSize = keybindContentButtonText.fontSize;
-                        keybindContentButtonText.text = "Waiting for input...";
-                        keybindContentButtonText.fontSize = 18f;
-                        KeybindLibBase.Instance.StartCoroutine(WaitForKeyInput(capturedKey =>
+                        GameObject modCategoryHeader = new GameObject($"Header");
+                        TextMeshProUGUI modCategoryHeaderText = modCategoryHeader.AddComponent<TextMeshProUGUI>();
+                        modCategoryHeaderText.text = $"- {categoryId}";
+                        modCategoryHeaderText.fontSize = 36f;
+                        modCategoryHeaderText.fontMaterial = standardKeybindContentTextMaterial;
+                        RectTransform modCategoryHeaderRect = modCategoryHeader.GetComponent<RectTransform>() ?? modCategoryHeader.AddComponent<RectTransform>();
+                        modCategoryHeaderRect.sizeDelta = new Vector2(modConfigPageRect.sizeDelta.x/2, 50);
+                        modCategoryHeader.transform.SetParent(categoryBox.transform, false);
+                    }
+
+                    GameObject categoryContentBox = new GameObject($"Content");
+                    categoryContentBox.transform.SetParent(categoryBox.transform, false);
+                    RectTransform categoryContentBoxRect = categoryContentBox.GetComponent<RectTransform>() ?? categoryContentBox.AddComponent<RectTransform>();
+                    categoryContentBoxRect.sizeDelta = categoryBoxRect.sizeDelta;
+
+                    GridLayoutGroup categoryContentBoxGrid = categoryContentBox.AddComponent<GridLayoutGroup>();
+                    categoryContentBoxGrid.constraintCount = 2;
+                    categoryContentBoxGrid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+                    categoryContentBoxGrid.cellSize = new Vector2(modConfigPageRect.sizeDelta.x/2, 50);
+                    categoryContentBoxGrid.spacing = new Vector2(10, 10);
+
+                    foreach (var keybindId in modKeybindsDict[categoryId])
+                    {
+                        GameObject keybindContentBox = new GameObject($"{keybindId}");
+                        keybindContentBox.transform.SetParent(categoryContentBox.transform, false);
+                        RectTransform keybindContentBoxRect = keybindContentBox.GetComponent<RectTransform>() ?? keybindContentBox.AddComponent<RectTransform>();
+                        keybindContentBoxRect.sizeDelta = categoryContentBoxRect.sizeDelta;
+
+                        GameObject keybindContentNameBox = new GameObject($"NameText");
+                        TextMeshProUGUI keybindBoxContentNameText = keybindContentNameBox.AddComponent<TextMeshProUGUI>();
+                        keybindBoxContentNameText.text = KeybindManager.GetKeyData(modId, keybindId).DisplayName;
+                        keybindBoxContentNameText.fontSize = 28f;
+                        keybindBoxContentNameText.fontMaterial = standardKeybindContentTextMaterial;
+                        RectTransform keyIdRect = keybindContentNameBox.GetComponent<RectTransform>() ?? keybindContentNameBox.AddComponent<RectTransform>();
+                        keyIdRect.sizeDelta = new Vector2(200, 50);
+                        keybindContentNameBox.transform.SetParent(keybindContentBox.transform, false);
+
+                        HorizontalLayoutGroup keybindContentBoxHLG = keybindContentBox.AddComponent<HorizontalLayoutGroup>();
+                        keybindContentBoxHLG.spacing = 50f;
+                        keybindContentBoxHLG.childForceExpandWidth = true;
+                        keybindContentBoxHLG.childForceExpandHeight = false;
+                        keybindContentBoxHLG.padding = new RectOffset(0, 20, 0, 0);
+
+                        LayoutElement keybindContentNameBoxLayout = keybindContentNameBox.AddComponent<LayoutElement>();
+                        keybindContentNameBoxLayout.flexibleWidth = 0;
+
+                        GameObject spacer = new GameObject("Spacer");
+                        spacer.transform.SetParent(keybindContentBox.transform, false);
+                        LayoutElement spacerLayout = spacer.AddComponent<LayoutElement>();
+                        spacerLayout.preferredWidth = -1;
+
+                        GameObject keybindContentButtonBox = new GameObject($"Button");
+                        keybindContentButtonBox.transform.SetParent(keybindContentBox.transform, false);
+
+                        Button keybindContentButton = keybindContentButtonBox.AddComponent<Button>();
+                        RectTransform keybindContentButtonRect = keybindContentButtonBox.GetComponent<RectTransform>() ?? keybindContentButtonBox.AddComponent<RectTransform>();
+                        keybindContentButtonRect.sizeDelta = new Vector2(125, 50);
+                        modKeybindsPageKeyButtons[(modId,keybindId)] = keybindContentButton;
+
+                        LayoutElement keybindContentButtonBoxLayout = keybindContentButtonBox.AddComponent<LayoutElement>();
+                        keybindContentButtonBoxLayout.preferredWidth = keybindContentButtonRect.sizeDelta.x;
+                        keybindContentButtonBoxLayout.preferredHeight = keybindContentButtonRect.sizeDelta.y;
+                        keybindContentButtonBox.transform.localPosition += new Vector3(0,10,0);
+
+                        Image keybindContentButtonImage = Object.Instantiate(standardKeybindContentButtonImage, keybindContentButtonBox.transform, false);
+                        keybindContentButtonImage.name = "Background";
+                        RectTransform keybindContentButtonImageRect = keybindContentButtonImage.GetComponent<RectTransform>();
+                        keybindContentButtonImageRect.anchorMin = Vector2.zero;
+                        keybindContentButtonImageRect.anchorMax = Vector2.one;
+                        keybindContentButtonImageRect.offsetMin = Vector2.zero;
+                        keybindContentButtonImageRect.offsetMax = Vector2.zero;
+                        keybindContentButtonImage.raycastTarget = true;
+                        keybindContentButtonImage.transform.SetAsFirstSibling();
+
+                        GameObject keybindContentButtonTextBox = new GameObject("Text");
+                        keybindContentButtonTextBox.transform.SetParent(keybindContentButtonBox.transform, false);
+                        keybindContentButtonTextBox.transform.SetAsLastSibling();
+
+                        RectTransform keybindContentButtonTextRect = keybindContentButtonTextBox.AddComponent<RectTransform>();
+                        keybindContentButtonTextRect.anchorMin = Vector2.zero;
+                        keybindContentButtonTextRect.anchorMax = Vector2.one;
+                        keybindContentButtonTextRect.offsetMin = Vector2.zero;
+                        keybindContentButtonTextRect.offsetMax = Vector2.zero;
+
+                        TextMeshProUGUI keybindContentButtonText = keybindContentButtonTextBox.AddComponent<TextMeshProUGUI>();
+                        keybindContentButtonText.text = KeybindManager.GetKey(modId, keybindId).ToString();
+                        keybindContentButtonText.alignment = TextAlignmentOptions.Center;
+                        keybindContentButtonText.fontMaterial = standardKeybindContentTextMaterial;
+                        keybindContentButtonText.color = Color.white;
+                        keybindContentButtonText.raycastTarget = false;
+                        keybindContentButtonText.fontSize = 24f;
+
+                        keybindContentButton.targetGraphic = keybindContentButtonImage;
+
+                        string capturedModId = modId;
+                        string capturedKeybindId = keybindId;
+                        keybindContentButton.onClick.AddListener(() =>
                         {
-                            if (capturedKey == KeyCode.None || capturedKey == KeyCode.Escape) return;
-                            KeybindManager.SetKey(capturedModId, capturedKeybindId, capturedKey);
-                            keybindContentButtonText.text = KeybindManager.GetKey(capturedModId, capturedKeybindId).ToString();
-                            keybindContentButtonText.fontSize = fontSize;
-                        }));
-                    });
+                            float fontSize = keybindContentButtonText.fontSize;
+                            keybindContentButtonText.text = "Waiting for input...";
+                            keybindContentButtonText.fontSize = 18f;
+                            KeybindLibBase.Instance.StartCoroutine(WaitForKeyInput(capturedKey =>
+                            {
+                                if (capturedKey == KeyCode.None || capturedKey == KeyCode.Escape) return;
+                                KeybindManager.SetKey(capturedModId, capturedKeybindId, capturedKey);
+                                keybindContentButtonText.text = KeybindManager.GetKey(capturedModId, capturedKeybindId).ToString();
+                                keybindContentButtonText.fontSize = fontSize;
+                            }));
+                        });
+                    }
                 }
             }
             modConfigPageScrollRect.verticalNormalizedPosition = 1f;

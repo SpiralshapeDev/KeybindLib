@@ -24,14 +24,18 @@
         <member name="P:KeybindLib.KeybindManager.KeyDetails.DisplayName">
             <summary>Human-readable name shown in keybind configuration menu.</summary>
         </member>
+        <member name="P:KeybindLib.KeybindManager.KeyDetails.DisplayCategory">
+            <summary>(optional, default: "Unknown Category") Human-readable category name shown in keybind configuration menu.</summary>
+        </member>
         <member name="P:KeybindLib.KeybindManager.KeyDetails.UnityEvent">
             <summary>A UnityEvent that runs when keybind conditions are met.</summary>
         </member>
-        <member name="M:KeybindLib.KeybindManager.KeyDetails.#ctor(UnityEngine.KeyCode,KeybindLib.KeybindManager.KeyEnvironment,KeybindLib.KeybindManager.KeyPressType,System.String)">
+        <member name="M:KeybindLib.KeybindManager.KeyDetails.#ctor(UnityEngine.KeyCode,KeybindLib.KeybindManager.KeyEnvironment,KeybindLib.KeybindManager.KeyPressType,System.String,System.String)">
             <param name="defaultKey">The default key code for the keybind.</param>
             <param name="keyEnvironment">The game environment where the keybind is active.</param>
             <param name="keyPressType">When the keybind event should trigger.</param>
             <param name="displayName">Human-readable name shown in keybind configuration menu.</param>
+            <param name="displayCategory">Human-readable category name shown in keybind configuration menu.</param>
             <returns>An object containing all unique data associated to the keybind.</returns>
         </member>
         <member name="T:KeybindLib.KeybindManager.KeyPressType">
@@ -68,7 +72,8 @@
                 KeyCode.F,
                 KeybindManager.KeyEnvironment.Any,
                 KeybindManager.KeyPressType.OnKeyDown,
-                "Test Keybind"
+                "Test Keybind",
+                "Test Category"
             );
             KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", testKeydetails).AddListener(() =>
             {

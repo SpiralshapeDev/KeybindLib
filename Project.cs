@@ -9,7 +9,7 @@ namespace KeybindLib
     {
         public const string modGUID = "SpiralMods." + modName;
         private const string modName = "KeybindLib";
-        private const string modVersion = "1.0.3";
+        private const string modVersion = "1.1.0";
 
         private readonly Harmony harmony = new Harmony(modGUID);
 
