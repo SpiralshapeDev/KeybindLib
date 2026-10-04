@@ -247,7 +247,7 @@ namespace KeybindLib
 
                     GameObject keybindContentNameBox = new GameObject($"NameText");
                     TextMeshProUGUI keybindBoxContentNameText = keybindContentNameBox.AddComponent<TextMeshProUGUI>();
-                    keybindBoxContentNameText.text = KeybindManager.GetDisplayName(modId, keybindId);
+                    keybindBoxContentNameText.text = KeybindManager.GetKeyData(modId, keybindId).DisplayName;
                     keybindBoxContentNameText.fontSize = 28f;
                     keybindBoxContentNameText.fontMaterial = standardKeybindContentTextMaterial;
                     RectTransform keyIdRect = keybindContentNameBox.GetComponent<RectTransform>() ?? keybindContentNameBox.AddComponent<RectTransform>();

@@ -17,9 +17,35 @@ namespace KeybindLib
     /// </summary>
     public static class KeybindManager
     {
-        /// <summary>
-        /// Limit what type of key press is needed to activate a keybind.
-        /// </summary>
+        /// <summary>An object containing all unique data associated to the keybind.</summary>
+        public class KeyDetails
+        {
+            /// <summary>The default key code for the keybind.</summary>
+            public KeyCode DefaultKey { get; set; }
+            /// <summary>The game environment where the keybind is active.</summary>
+            public KeyEnvironment KeyEnvironment { get; set; }
+            /// <summary>When the keybind event should trigger.</summary>
+            public KeyPressType KeyPressType { get; set; }
+            /// <summary>Human-readable name shown in keybind configuration menu.</summary>
+            public string DisplayName { get; set; }
+            /// <summary>A UnityEvent that runs when keybind conditions are met.</summary>
+            public UnityEvent UnityEvent { get; set; }
+
+            /// <param name="defaultKey">The default key code for the keybind.</param>
+            /// <param name="keyEnvironment">The game environment where the keybind is active.</param>
+            /// <param name="keyPressType">When the keybind event should trigger.</param>
+            /// <param name="displayName">Human-readable name shown in keybind configuration menu.</param>
+            /// <returns>An object containing all unique data associated to the keybind.</returns>
+            public KeyDetails(KeyCode defaultKey, KeyEnvironment keyEnvironment, KeyPressType keyPressType, string displayName)
+            {
+                DefaultKey = defaultKey;
+                KeyEnvironment = keyEnvironment;
+                KeyPressType = keyPressType;
+                DisplayName = displayName;
+            }
+        }
+
+        /// <summary> Limit what type of key press is needed to activate a keybind. </summary>
         public enum KeyPressType
         {
             /// <summary>Triggered once when the key is pressed.</summary>
@@ -30,9 +56,7 @@ namespace KeybindLib
             WhileKeyHeld=2
         }
 
-        /// <summary>
-        /// Limit what minimum game environment is needed for keybind press to be to activate.
-        /// </summary>
+        /// <summary> Limit what minimum game environment is needed for keybind press to be to activate. </summary>
         public enum KeyEnvironment
         {
             /// <summary>Do not limit to any environment</summary>
@@ -47,9 +71,13 @@ namespace KeybindLib
 
         /// <example>
         /// <code>
-        /// KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", "Test Keybind", KeyCode.F,
-        ///     KeybindManager.KeyEnvironment.Any, KeybindManager.KeyPressType.OnKeyDown)
-        ///     .AddListener(() =>
+        /// KeyDetails testKeydetails = new KeyDetails(
+        ///     KeyCode.F,
+        ///     KeybindManager.KeyEnvironment.Any,
+        ///     KeybindManager.KeyPressType.OnKeyDown,
+        ///     "Test Keybind"
+        /// );
+        /// KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", testKeydetails).AddListener(() =>
         /// {
         ///     KeyCode currentKey = KeybindManager.GetKey("TestDeveloper.TestMod", "test_key");
         ///     Debug.Log($"{currentKey} was pressed!");
@@ -58,19 +86,15 @@ namespace KeybindLib
         /// </example>
         /// <param name="modId">The unique identifier of the mod registering the keybind.</param>
         /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
-        /// <param name="displayName">Human-readable name shown in keybind configuration menus.</param>
-        /// <param name="defaultKey">The default key code for the keybind.</param>
-        /// <param name="keyEnvironment">The game environment where the keybind is active.</param>
-        /// <param name="keyPressType">When the keybind event should trigger.</param>
+        /// <param name="keyDetails">An object containing all unique data associated to the keybind.</param>
         /// <returns>A UnityEvent that can be used to detect a keybind press when the keybind conditions are met.</returns>
-        public static UnityEvent RegisterEvent(string modId, string keyId, string displayName, KeyCode defaultKey, KeyEnvironment keyEnvironment, KeyPressType keyPressType)
+        public static UnityEvent RegisterEvent(string modId, string keyId, KeyDetails keyDetails)
         {
-            EventHandler.defaultKeyCodes[(modId,keyId)] = defaultKey;
             if (!ConfigHandler.Has(modId, keyId))
             {
-                ConfigHandler.Set(modId, keyId, defaultKey);
+                ConfigHandler.Set(modId, keyId, keyDetails.DefaultKey);
             }
-            return EventHandler.Register(modId, keyId, displayName, keyEnvironment, keyPressType);
+            return EventHandler.Register(modId, keyId, keyDetails);
         }
 
         /// <summary>Removes a UnityEvent if it exists.</summary>
@@ -82,19 +106,7 @@ namespace KeybindLib
         /// <param name="modId">The unique identifier of the mod.</param>
         /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
         /// <returns>Null/Default values if event's not present or, if event's present, returns a quadruple with the values ( Key's Event, Display Name , Key's environment , Key's Press Type )</returns>
-        public static (UnityEvent, string, KeyEnvironment, KeyPressType) GetKeyData(string modId, string keyId) => EventHandler.Get(modId, keyId);
-
-        /// <summary>Gets a UnityEvent if it exists.</summary>
-        /// <param name="modId">The unique identifier of the mod.</param>
-        /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
-        /// <returns>Null if event's not present or, if event's present, returns a UnityEvent that can be used to detect a keybind press when the keybind conditions are met.</returns>
-        public static UnityEvent GetEvent(string modId, string keyId) => EventHandler.Get(modId, keyId).Item1;
-
-        /// <summary>Gets a keybind's display name if it exists.</summary>
-        /// <param name="modId">The unique identifier of the mod.</param>
-        /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
-        /// <returns>Null if event's not present or, if event's present, returns keybind's Human-readable name shown in keybind configuration menus.</returns>
-        public static string GetDisplayName(string modId, string keyId) => EventHandler.Get(modId, keyId).Item2;
+        public static KeyDetails GetKeyData(string modId, string keyId) => EventHandler.Get(modId, keyId);
 
         /// <summary>Gets all active keybinds that are loaded.</summary>
         /// <returns>A dictionary in this format <code>{modID1: [modKey1,modKey2,etc...], modID2: [modKey1,etc...]}</code>.</returns>
@@ -117,13 +129,6 @@ namespace KeybindLib
         /// <returns>KeyCode.None if key's not present or, if key's present, returns KeyCode for requested keybind.</returns>
         public static KeyCode GetKey(string modId, string keyId) => ConfigHandler.Get(modId, keyId);
 
-
-        /// <summary>Gets the default value for a keybind in mod's custom keybind config.</summary>
-        /// <param name="modId">The unique identifier of the mod.</param>
-        /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
-        /// <returns>KeyCode.None if key's not present or, if key's present, returns default KeyCode for requested keybind.</returns>
-        public static KeyCode GetDefaultKey(string modId, string keyId) => EventHandler.defaultKeyCodes.TryGetValue((modId, keyId), out var keyCode) ? keyCode : KeyCode.None;
-
         /// <summary>Returns if keybind exists.</summary>
         /// <param name="modId">The unique identifier of the mod.</param>
         /// <param name="keyId">The unique identifier for the keybind within the mod.</param>
@@ -139,8 +144,7 @@ namespace KeybindLib
     internal static class EventHandler
     {
         // { (modID, keyId): (UnityEvent, displayName, environmentRequirement, keyPressTypeRequirement) }
-        internal static readonly Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)> KeyBindings = new Dictionary<(string, string), (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType)>();
-        internal static readonly Dictionary<(string, string), KeyCode> defaultKeyCodes = new Dictionary<(string, string), KeyCode>();
+        internal static readonly Dictionary<(string, string), KeybindManager.KeyDetails> KeyBindings = new Dictionary<(string, string), KeybindManager.KeyDetails>();
 
         [HarmonyPatch(typeof(Game))]
         [HarmonyPatch("Update")]
@@ -153,7 +157,7 @@ namespace KeybindLib
                 if (!ConfigHandler.Has(modId, keyId))
                 {
                     Debug.LogWarning($"{KeybindLibBase.modGUID}: Failed to find registered key `{keyPattern}`, resetting to last known default.");
-                    ConfigHandler.Set(modId, keyId, defaultKeyCodes[(modId, keyId)]);
+                    ConfigHandler.Set(modId, keyId, KeyBindings[(modId, keyId)].DefaultKey);
                     continue;
                 }
 
@@ -167,10 +171,11 @@ namespace KeybindLib
         private static void OnKeyPress(string modId, string keyId, KeybindManager.KeyPressType keyPress)
         {
             if (!ConfigHandler.Has(modId,keyId)) return;
-            var (unityEvent, _, keyEnvironment, keyPressType) = KeyBindings[(modId,keyId)];
+            KeybindManager.KeyDetails keyDetails = Get(modId,keyId);
+            if (keyDetails == null) return;
 
-            if (keyPressType != keyPress) return;
-            switch(keyEnvironment)
+            if (keyDetails.KeyPressType != keyPress) return;
+            switch(keyDetails.KeyEnvironment)
             {
                 case KeybindManager.KeyEnvironment.TitleScreen:
                 {
@@ -199,36 +204,34 @@ namespace KeybindLib
                 }
             }
 
-            unityEvent?.Invoke();
+            keyDetails.UnityEvent?.Invoke();
         }
 
-        public static UnityEvent Register(string modId, string keyId, string displayName, KeybindManager.KeyEnvironment keyEnvironment, KeybindManager.KeyPressType keyPressType)
+        public static UnityEvent Register(string modId, string keyId, KeybindManager.KeyDetails keyDetails)
         {
             Debug.Log($"{KeybindLibBase.modGUID}: Registering key `{modId}:{keyId}`");
-            if (!KeyBindings.ContainsKey((modId, keyId)))
-            {
-                KeyBindings[(modId,keyId)] = (new UnityEvent(), displayName, keyEnvironment, keyPressType);
-            }
-            else
-            {
-                var (unityEvent, _, _, _) = KeyBindings[(modId,keyId)];
-                KeyBindings[(modId,keyId)] = (unityEvent, displayName, keyEnvironment, keyPressType);
-            }
-            return KeyBindings[(modId,keyId)].Item1;
+            keyDetails.UnityEvent = KeyBindings.ContainsKey((modId, keyId)) ? keyDetails.UnityEvent : new UnityEvent();
+            KeyBindings[(modId,keyId)] = keyDetails;
+
+            return keyDetails.UnityEvent;
         }
 
         public static void Unregister(string modId, string keyId)
         {
             if (!ConfigHandler.Has(modId, keyId)) return;
-
-            KeyBindings[(modId,keyId)].Item1.RemoveAllListeners();
+            KeybindManager.KeyDetails keyDetails = Get(modId,keyId);
+            if (keyDetails == null) return;
+            UnityEvent unityEvent = keyDetails.UnityEvent;
+            if (unityEvent == null) return;
+            unityEvent.RemoveAllListeners();
             KeyBindings.Remove((modId,keyId));
         }
 
-        public static (UnityEvent, string, KeybindManager.KeyEnvironment, KeybindManager.KeyPressType) Get(string modId, string keyId)
+        public static KeybindManager.KeyDetails Get(string modId, string keyId)
         {
-            return ConfigHandler.Has(modId,keyId) ? KeyBindings[(modId,keyId)] : (null, null, default, default);
+            return ConfigHandler.Has(modId,keyId) ? KeyBindings[(modId,keyId)] : null;
         }
+
         public static Dictionary<string,List<string>> GetAllActiveKeys()
         {
             Dictionary<string,List<string>> activeKeys = new Dictionary<string, List<string>>();
@@ -286,9 +289,8 @@ namespace KeybindLib
             string keybindConfigPath = Path.Combine(keybindConfigDirPath, $"{modId}.cfg");
             Directory.CreateDirectory(keybindConfigDirPath);
             string fileHash = GetFileHash(keybindConfigPath);
-            if (fileHash == null) return KeyCode.None;
+            if (fileHash == null || !EventHandler.KeyBindings.ContainsKey((modId,keyId)) || !File.Exists(keybindConfigPath)) return KeyCode.None;
 
-            if (!EventHandler.KeyBindings.ContainsKey((modId,keyId)) || !File.Exists(keybindConfigPath)) return KeyCode.None;
             if (!getDict.ContainsKey(modId) || fileHash != getDict[modId].Item1)
             {
                 BuildModGetDict(modId);
