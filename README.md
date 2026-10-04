@@ -41,10 +41,17 @@ This is example will show you how to create a keybind listener.
 using UnityEngine;
 using HarmonyLib;
 
-KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", "Test Keybind", KeyCode.F, KeybindManager.KeyEnvironment.Any, KeybindManager.KeyPressType.OnKeyDown).AddListener(() =>
+KeybindManager.KeyDetails testKeydetails = new KeybindManager.KeyDetails(
+    KeyCode.F,
+    KeybindManager.KeyEnvironment.Any,
+    KeybindManager.KeyPressType.OnKeyDown,
+    "Test Keybind", 
+    "Test Category"
+);
+KeybindManager.RegisterEvent("TestDeveloper.TestMod", "test_key", testKeydetails).AddListener(() =>
 {
-   KeyCode currentKey = KeybindManager.GetKey("TestDeveloper.TestMod", "test_key");
-   Debug.Log($"{currentKey} was pressed!");
+    KeyCode currentKey = KeybindManager.GetKey("TestDeveloper.TestMod", "test_key"); 
+    Debug.Log($"{currentKey} was pressed!");
 });
 ```
 
